@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Colección de Cómics</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #fff;
+            background-color: #000;
+            overflow-x: hidden;
+        }
+
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 200%;
+            pointer-events: none;
+            background-image: radial-gradient(2px 2px at 20px 30px, #ffd700, rgba(0,0,0,0)),
+                              radial-gradient(2px 2px at 40px 70px, #fff, rgba(0,0,0,0)),
+                              radial-gradient(1px 1px at 90px 40px, #ffd700, rgba(0,0,0,0)),
+                              radial-gradient(2px 2px at 160px 120px, #fff, rgba(0,0,0,0));
+            background-repeat: repeat;
+            background-size: 200px 200px;
+            animation: move-stars 100s linear infinite;
+            opacity: 0.5;
+            z-index: -1;
+        }
+
+        @keyframes move-stars {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-1000px, -1000px); }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+        }
+
+        .comic-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 30px;
+            padding: 20px 0;
+        }
+
+        .comic-item {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+        }
+
+        .comic-item:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 10px;
+            background: linear-gradient(45deg, transparent, rgba(255, 215, 0, 0.4), transparent);
+            animation: glow 2s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes glow {
+            0% { transform: translate(-150%, -150%); }
+            100% { transform: translate(150%, 150%); }
+        }
+
+        .comic-item:hover {
+            transform: translateY(-10px) scale(1.03);
+        }
+
+        .comic-cover {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            border-bottom: 3px solid #ffd700;
+        }
+
+        .comic-title {
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            background-color: rgba(255, 215, 0, 0.2);
+            color: #fff;
+        }
+
+        #comic-reader {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            z-index: 1000;
+        }
+
+        #comic-page {
+            max-width: 90%;
+            max-height: 80%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 20px rgba(255,215,0,0.5);
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-button {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(255, 215, 0, 0.7);
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 1em;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .nav-button:hover {
+            background-color: rgba(255, 215, 0, 0.9);
+        }
+
+        #prev-button { left: 20px; }
+        #next-button { right: 20px; }
+        #close-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: rgba(255, 215, 0, 0.7);
+            color: #000;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            font-size: 1em;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #close-button:hover {
+            background-color: rgba(255, 215, 0, 0.9);
+        }
+
+        #page-info {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(255, 215, 0, 0.7);
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="stars"></div>
+
+    <div class="container">
+        <div class="comic-grid" id="comic-grid"></div>
+    </div>
+
+    <div id="comic-reader">
+        <img id="comic-page" src="" alt="Manga Page">
+        <button id="prev-button" class="nav-button">◀ Back</button>
+        <button id="next-button" class="nav-button">Next ▶</button>
+        <button id="close-button">✖</button>
+        <div id="page-info"></div>
+    </div>
+
+    <script>
+        const comics = [
+            {
+                id: 1,
+                title: "えっちが好きじゃダメ？vol,07",
+                cover: "https://media.discordapp.net/attachments/1297684023384211517/1297694098358272113/cover.png?ex=6716db4f&is=671589cf&hm=7c7f855ede4ad177691eb253a00c9e291af64a09b6c05f5ea155ae229f44cd4b&=&format=webp&quality=lossless&width=326&height=468",
+                pages: [
+                    { url: "https://media.discordapp.net/attachments/1297684023384211517/1297694302964813824/1t.png?ex=6716db7f&is=671589ff&hm=f572743b3b066c8a74be33463d3aebd3b7e102813101c959abb15698d261ae61&=&format=webp&quality=lossless&width=326&height=468", name: "Page 1" },
+                    { url: "https://media.discordapp.net/attachments/1297684023384211517/1297694333587161218/2t.png?ex=6716db87&is=67158a07&hm=28588f227e2004fb19fccd6b773f02b15ff1d511679fed608bed6d9b3be9596a&=&format=webp&quality=lossless&width=324&height=467", name: "Page 2" },
+                    { url: "https://cdn.discordapp.com/attachments/1297684023384211517/1297694363412992050/3t.png?ex=6716db8e&is=67158a0e&hm=d35d189c42d4be602e17e5df680b716b2b0204a2ce8b4f99bd26ca35640a277d&", name: "Page 3" },
+                    { url: "https://media.discordapp.net/attachments/1297684023384211517/1297694383688253582/4t.png?ex=6716db93&is=67158a13&hm=4dc68418a172df836c7703bae92f6a76e3c7dcf58e27f3ea29f6e4a9765e36ea&=&format=webp&quality=lossless&width=243&height=350", name: "Page 4" },
+                    { url: "https://media.discordapp.net/attachments/1297684023384211517/1297694416408023174/5t.png?ex=6716db9a&is=67158a1a&hm=731b5590bd6071df975a99b8f267b3c7ffe8e7d21ea8ef740ebcefb104cc8b78&=&format=webp&quality=lossless&width=325&height=468", name: "Page 5" },
+                    { url: "https://media.discordapp.net/attachments/1297684023384211517/1297694470149636187/6t.png?ex=6716dba7&is=67158a27&hm=1b83c08d5d4c477a3b16672a7f50a643a99047f29950e72cd0d576aa7fa92a71&=&format=webp&quality=lossless&width=324&height=467",  name: "Page 6" },
+                    { url: "https://media.discordapp.net/attachments/1297684023384211517/1297695365461708870/7t.png?ex=6716dc7d&is=67158afd&hm=c5234d8cad658042fb0dc7c822be0994e10f73de200b7c0999d236dfbbc6c543&=&format=webp&quality=lossless&width=324&height=467",  name: "Page 7" },
+                    { url: "https://media.discordapp.net/attachments/1297684023384211517/1297695420369076236/8.png?ex=6716dc8a&is=67158b0a&hm=da725ea500f100f334fa304d95e4f64f57eae1212cfb1554a13c6bc94ad37299&=&format=webp&quality=lossless&width=325&height=468",  name: "Page 8" },
+                    { url: "https://media.discordapp.net/attachments/1297684023384211517/1297695563504025700/9.png?ex=6716dcac&is=67158b2c&hm=c5ede496ac10ae0f406d57162885935cd68ff012d4160b6e15d83d4c233e9d00&=&format=webp&quality=lossless&width=325&height=468",  name: "Page 9" },
+                    { url: "https://media.discordapp.net/attachments/1297684023384211517/1297695606151839775/10.png?ex=6716dcb6&is=67158b36&hm=c9a505be7fa9a59535fe93a4ee75fa46c3fe043aa257c5b359de96da225a3a0f&=&format=webp&quality=lossless&width=324&height=468",  name: "Page 10" },
+                    { url: "https://media.discordapp.net/attachments/1297684023384211517/1297695632970088539/11.png?ex=6716dcbc&is=67158b3c&hm=ca61478863380a24c88bfcc3ee84ffe70e16d23e78b0fdc391dbc73907e8e693&=&format=webp&quality=lossless&width=325&height=467",  name: "Page 11" },
+                    { url: "https://media.discordapp.net/attachments/1297684023384211517/1297695659251466252/12.png?ex=6716dcc3&is=67158b43&hm=cc6c6e67b77e5bfe930e7aa44f3d144bf855e7ce9f2808b3455ec3943164e5c5&=&format=webp&quality=lossless&width=325&height=468",  name: "Page 12" },
+                    { url: "https://media.discordapp.net/attachments/1297684023384211517/1297695691237359646/13.png?ex=6716dcca&is=67158b4a&hm=dcfd6bb51282c3c55926ff1b6b77512f893838bfcf26dc385198d20f638dc812&=&format=webp&quality=lossless&width=325&height=468",  name: "Page 13" },
+                    { url: "https://media.discordapp.net/attachments/1297684023384211517/1297695721772023878/14.png?ex=6716dcd2&is=67158b52&hm=f2739b4ba7659d02589f2888a0d2deb6360582968fd5a57dbf30a88024043623&=&format=webp&quality=lossless&width=324&height=468",  name: "Page 14" },
+                    { url: "https://media.discordapp.net/attachments/1297684023384211517/1297695746942046269/15.png?ex=6716dcd8&is=67158b58&hm=f4bc52f01b0db9ab4d5dc4fb2593c91c6ca84ecf5fe709b5a9d203d3c39e7818&=&format=webp&quality=lossless&width=326&height=468",  name: "Page 15" },
+                    { url: "https://media.discordapp.net/attachments/1297684023384211517/1297695775937007698/16.png?ex=6716dcdf&is=67158b5f&hm=ff4e5f402fac86219323d6ade34a4d762ffd383ef3a1c0d95ea2c7a0a02e28ab&=&format=webp&quality=lossless&width=324&height=468",  name: "Page 16" }
+                    
+                ]
+            },
+        ];
+
+        const comicGrid = document.getElementById('comic-grid');
+        const comicReader = document.getElementById('comic-reader');
+        const comicPage = document.getElementById('comic-page');
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+        const closeButton = document.getElementById('close-button');
+        const pageInfo = document.getElementById('page-info');
+
+        let currentComic = null;
+        let currentPage = 0;
+
+        function createComicElement(comic) {
+            const comicElement = document.createElement('div');
+            comicElement
+            comicElement.classList.add('comic-item');
+            comicElement.innerHTML = `
+                <img class="comic-cover" src="${comic.cover}" alt="${comic.title}">
+                <div class="comic-title">${comic.title}</div>
+            `;
+            comicElement.addEventListener('click', () => {
+                openComicReader(comic);
+            });
+            return comicElement;
+        }
+
+        function openComicReader(comic) {
+            currentComic = comic;
+            currentPage = 0;
+            comicPage.src = comic.pages[currentPage].url;
+            pageInfo.textContent = `Page ${currentPage + 1} of ${comic.pages.length}`;
+            comicReader.style.display = 'flex';
+        }
+
+        function updatePage() {
+            comicPage.src = currentComic.pages[currentPage].url;
+            pageInfo.textContent = `Page ${currentPage + 1} of ${currentComic.pages.length}`;
+        }
+
+        prevButton.addEventListener('click', () => {
+            if (currentPage > 0) {
+                currentPage--;
+                updatePage();
+            }
+        });
+
+        nextButton.addEventListener('click', () => {
+            if (currentPage < currentComic.pages.length - 1) {
+                currentPage++;
+                updatePage();
+            }
+        });
+
+        closeButton.addEventListener('click', () => {
+            comicReader.style.display = 'none';
+        });
+
+        comics.forEach(comic => {
+            const comicElement = createComicElement(comic);
+            comicGrid.appendChild(comicElement);
+        });
+    </script>
+</body>
+</html>
